@@ -62,3 +62,51 @@ export interface CallEndEvent {
   code: number;
   answered: boolean;
 }
+
+
+export interface StateListenerMessage {
+  msg?: string;
+  localAgent?: String;
+  direction?: CallDirection; //呼叫方向
+  otherLegNumber?: String;
+  callId?: String;
+  isTransfer?: any; //转接状态
+
+  latencyTime?: number | undefined; //网络延迟(ms)
+  upLossRate?: number | undefined; //上行-丢包率
+  downLossRate?: number | undefined; //下行-丢包率
+}
+
+// 网络延迟统计
+export interface NetworkLatencyStat {
+  roundTripTime?: number; //延迟时间(ms)
+  inboundLost?: number; //下行-丢包数量
+  inboundPacketsSent?: number; //下行-包的总数
+  inboundAudioLevel?: number; //下行-声音大小
+
+  outboundLost?: number; //上行-丢包数量
+  outboundPacketsSent?: number; //上行-包的总数
+  outboundAudioLevel?: number; //上行-声音大小
+}
+
+
+// 网络延迟统计
+export interface LatencyStat {
+  latencyTime: number;
+  upLossRate: number;
+  upAudioLevel: number; //上行-outbound-音量
+  downLossRate: number;
+  downAudioLevel: number; //下行-inbound-音量
+}
+
+interface CallExtraParam {
+  outNumber?: string;
+  businessId?: String;
+}
+
+
+export default class ShsanyCall {
+
+    private constraints: { audio: boolean; video: boolean };
+     
+}
