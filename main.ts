@@ -9,9 +9,9 @@ const { createApp, ref, markRaw } = Vue;
 const App = {
   template: `  
   <div>
-  <button type="primary" @click="enter">签入</button>
+  <button type="primary" @click="enter">注册</button>
     <button type="primary" @click="call">外呼</button>
-    <button type="primary" @click="out">签出</button>
+    <button type="primary" @click="out">取消注册</button>
     <button type="primary" v-if="inCall">通话中</button>
     <button type="primary" @click="answer" v-if="isAnswer && !inCall">
       接听
@@ -104,7 +104,14 @@ const App = {
           console.log("取消静音", data);
           break;
         case "LATENCY_STAT":
-          console.log("统计", data);
+          console.log("通话质量统计", {
+            下行音频: `${(data.downAudioLevel * 100).toFixed(2)}%`,
+            下行丢包率: `${(data.downLossRate * 100).toFixed(2)}%`,
+            网络延迟: `${data.latencyTime}ms`,
+            上行音频: `${(data.upAudioLevel * 100).toFixed(2)}%`,
+            上行丢包率: `${(data.upLossRate * 100).toFixed(2)}%`,
+            原始数据: data,
+          });
           break;
         case "MIC_ERROR":
           console.log("错误", data);
@@ -116,26 +123,14 @@ const App = {
       TURN = "turn",
     }
     const init = () => {
-      // const socket = new WebSocket("wss://openchat.bestpay.cn:21117/fs-socket");
-      // socket.onopen = () => {
-      //   console.log("websocket连接成功");
-      // };
-      // socket.onclose = () => {
-      //   console.log("websocket连接关闭");
-      // };
-
       console.log("初始化");
       try {
         const configuration: InitConfig = {
-          host: "172.17.132.95",
+          host: "172.16.2.202",
           port: 5060,
-          // fsHost: "wss://crm-callcenter.test.bestpay.net/fws",
-          // viaTransport:'ws',
-          fsHost: "ws://172.17.132.95",
-          fsPort: "5066",
+          fsHost: "192.168.0.216",
           extNo: "1005",
           extPwd: "1005",
-          stun: { type: StunType.STUN, host: "stun.l.google.com:19302" },
           checkMic: true,
           stateEventListener,
         };
@@ -149,7 +144,7 @@ const App = {
     };
 
     const call = () => {
-      sipClient.value?.call("1006");
+      sipClient.value?.call("1007");
     };
     const out = () => {
       sipClient.value?.unregister();

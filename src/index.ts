@@ -37,7 +37,7 @@ export default class ShsanyCall {
   //媒体控制
   private constraints = {
     audio: true,
-    video: true,
+    video: false,
   };
 
   //创建audio控件，播放声音的地方
@@ -69,6 +69,9 @@ export default class ShsanyCall {
   private checkMic: boolean;
 
   constructor(config: InitConfig) {
+    this.ua = null as any;
+    this.socket = null as any;
+    this.localIp = "";
     this.checkMic = config.checkMic;
     this.localAgent = config.extNo;
     if (config.stateEventListener !== null) {
@@ -95,12 +98,12 @@ export default class ShsanyCall {
   }) {
     const { username, password, serverIp, deviceIP, port = 5066 } = regInfo;
     this.localIp = deviceIP;
-    this.socket = new jssip.WebSocketInterface(`ws://${serverIp}:${port}`);
+    this.socket = new jssip.WebSocketInterface(`wss://${serverIp}:7443`);
     let configuration = {
       sockets: [this.socket],
-      uri: `sip:${username}@${serverIp}:${port};transport=wss`,
+      uri: `sip:${username}@${serverIp}:5060;transport=wss`,
       password: password,
-      outbound_proxy_set: `ws://${serverIp}:${port}`,
+      outbound_proxy_set: `ws://${serverIp}:7443`,
       contact_uri: `sip:${username}@${deviceIP}:20455;rtcweb-breaker=yes;transport=ws`,
       session_timers: false,
       register: true,
@@ -148,6 +151,7 @@ export default class ShsanyCall {
         if (data.originator === "remote") {
           // 远程来电
           this.incomingSession = data.session;
+          this.currentSession = this.incomingSession;
           this.direction = CallDirectionEnum.INBOUND;
           currentEvent = State.INCOMING_CALL;
         } else {
@@ -377,7 +381,7 @@ export default class ShsanyCall {
     this.ua.sendMessage(target, content, options);
   };
 
-  public handleCall(phoneNumber: string | number, isVideo: boolean) {
+  public call(phoneNumber: string | number, isVideo: boolean) {
     this.micCheck();
     if (this.ua && this.ua.isRegistered()) {
       let eventHandlers = {
@@ -412,6 +416,19 @@ export default class ShsanyCall {
     }
   }
 
+    public answer() {
+    if (this.currentSession && this.currentSession.isInProgress()) {
+      this.currentSession.answer({
+        mediaConstraints: this.constraints,
+      });
+    } else {
+      this.onChangeState(State.ERROR, {
+        msg: "非法操作，通话尚未建立或状态不正确，请勿操作",
+      });
+    }
+  }
+
+    // 挂断
   public hangup() {
     if (this.currentSession && !this.currentSession.isEnded()) {
       this.currentSession.terminate();
@@ -428,6 +445,18 @@ export default class ShsanyCall {
     }
     this.currentSession.hold();
   }
+
+    //取消保持
+  public unhold() {
+    if (!this.currentSession || !this.checkCurrentCallIsActive()) {
+      return;
+    }
+    if (!this.currentSession.isOnHold()) {
+      return;
+    }
+    this.currentSession.unhold();
+  }
+  
 
   public mute() {
     if (!this.currentSession || !this.checkCurrentCallIsActive()) {
