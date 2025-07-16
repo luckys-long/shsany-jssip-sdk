@@ -18,7 +18,7 @@ ShsanyCall 是一个基于 WebRTC 的 SIP 电话 SDK，能够在 Web 应用中�
 ### 安装
 
 ```bash
-yarn add  git+https://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@github.com/luckys-long/shsany-jssip-sdk.git 
+# yarn add  
 # 或  
 # yarn add shsany-call
 ```
