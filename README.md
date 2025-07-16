@@ -15,14 +15,15 @@ ShsanyCall 是一个基于 WebRTC 的 SIP 电话 SDK，能够在 Web 应用中�
 - 🔄 事件驱动的状态管理
 - 🛠️ TypeScript 类型支持
 
-## 安装
+### 安装
 
 ```bash
 npm install shsany-call
 # 或  
 yarn add shsany-call
+```
 
-### 初始化
+#### 初始化
 
 初始化加载 sdk 的参数说明：
 
@@ -40,8 +41,6 @@ yarn add shsany-call
 
 ```javascript
 
-1. 初始化
-
 import ShsanyCall from "shsany-call";
 
 const callInstance = new ShsanyCall({
@@ -58,30 +57,91 @@ const callInstance = new ShsanyCall({
 
 callInstance.init();
 ```
-2. 基础功能
+#### 接听
+```javascript
+callInstance.answer();
+```
+#### 挂断
+```javascript
+callInstance.hangup();
+```
+#### 保持
+```javascript
+callInstance.hold();
+```
+#### 转接
+```javascript
+callInstance.transfer("1003");
+```
+#### 取消保持
+```javascript
+callInstance.unhold();
+```
 
+#### 退出
 
-方法	说明	示例
+```javascript
+callInstance.unregister();
+callInstance.cleanSdk();
+```
 
-call	发起呼叫	call("1002", false)
-answer	接听来电	answer()
-hangup	挂断通话	hangup()
-hold	保持通话	hold()
-transfer	通话转接	transfer("1003")
+## 流程说明
 
-3. 配置参数
-interface InitConfig {
-  host: string;    // SIP服务器地址
-  port: number;    // SIP端口
-  fsHost: string;  // FreeSWITCH地址
-  extNo: string;   // 分机号
-  extPwd: string;  // 分机密码
-  checkMic?: boolean; // 麦克风检测
-}
+### 1、初始化
 
-4. 最佳实践
-建议在应用初始化时创建单例
+1、检查麦克风权限
+2、调用初始化方法
+3、收到回调事件「REGISTERED」表示注册成功。错误处理：监听事件，收到「DISCONNECTED」、「REGISTER_FAILED」做出相应提示
 
-所有通话操作需在状态回调中处理
+## 文档说明
+提供如下方法：
 
-生产环境必须使用 HTTPS
+| 函数       | 调用方式                  | 说明                                                      |
+| ---------- | ------------------------- | --------------------------------------------------------- |
+| 初始化     | new ShsanyCall(config)      |                                                           |
+| 销毁 SDK   | cleanSDK()                |                                                           |
+| 检查麦克风 | micCheck()                | 异步接口，若麦克风异常会回调 MIC_ERROR 事件               |
+| 注册       | register()                |                                                           |
+| 取消注册   | unregister()              |                                                           |
+| 呼叫请求   | call(phone,extraParam={}) | phone 为外呼号码，extraParam 为可选的扩展参数（可以不传） |
+| 挂断电话   | hangup()                  |                                                           |
+| 应答接听   | answer()                  |                                                           |
+| 保持       | hold()                    |                                                           |
+| 取消保持   | unhold()                  |                                                           |
+| 静音       | mute()                    |                                                           |
+| 取消静音   | unmute()                  |                                                           |
+| 转接通话   | transfer(phone)           |                                                           |
+| 按键       | sendDtmf(tone)            | 按键或二次拨号                                            |
+
+### 状态回调（stateEventListener）
+
+前端注入状态回调函数，通过状态回调 控制页面按钮显示
+
+stateEventListener 回调参数为 event, data
+
+| Event 事件列表              | 返回值                                                                                                                                                             | 状态说明           |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
+| MIC_ERROR                   | {msg: xxxx}                                                                                                                                                        | 麦克风检测异常     |
+| ERROR                       | {msg: xxxx}                                                                                                                                                        | 错误异常           |
+| CONNECTED                   | {localAgent: '1001'}                                                                                                                                               | 连接成功           |
+| DISCONNECTED                | 无返回值                                                                                                                                                           | websocket 连接失败 |
+| REGISTERED                  | 无返回值                                                                                                                                                           | 注册成功           |
+| UNREGISTERED                | 无返回值                                                                                                                                                           | 取消注册           |
+| REGISTER_FAILED             | {msg: xxxx}                                                                                                                                                        | 注册失败           |
+| INCOMING_CALL/OUTGOING_CALL | {direction: 'inbound', otherLegNumber: '138xxxxxxxx', 'callId': 'xxxxxxx'} 说明：direction 为呼叫方向：inbound 呼入，outbound 呼出；otherLegNumber：第三方呼叫记录 | 呼入振铃/外呼响铃  |
+| IN_CALL                     | 无返回值                                                                                                                                                           | 通话中             |
+| HOLD                        | 无返回值                                                                                                                                                           | 保持中             |
+| CALL_END                    | CallEndEvent                                                                                                                                                       | 通话结束           |
+| MUTE                        | 无返回值                                                                                                                                                           | 静音               |
+| UNMUTE                      | 无返回值                                                                                                                                                           | 取消静音           |
+| LATENCY_STAT                | LatencyStat                                                                                                                                                        | 网络延迟统计       |
+| MESSAGE_INCOMING            | newMessage                                                                                                                                                         | 消息接收           |
+
+### CallEndEvent
+
+| 属性       | 必须 | 类型    | 说明                                              |
+| ---------- | ---- | ------- | ------------------------------------------------- |
+| answered   | 是   | boolean | 是否接通(以后端为准)                              |
+| originator | 是   | string  | 发起方(挂断方):local 本地(自己),remote 远程(对方) |
+| cause      | 是   | string  | 挂断原因                                          |
+| code       | 否   | number  | 当 originator=remote，且 answered=false 时存在    |
