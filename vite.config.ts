@@ -20,7 +20,7 @@ export default defineConfig({
   build: {
     lib: {
       entry: resolve(__dirname, "src/index.ts"),
-      name: "ShsanyJSSipSDK",
+      name: "ShsanyCall",
       fileName: (format) => `shsany-jssip-sdk.${format}.js`, // 修改：按格式生成文件名
       formats: ["es", "umd"], // 明确指定输出格式
     },

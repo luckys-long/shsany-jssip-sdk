@@ -558,3 +558,5 @@ public hold() {
     };
   }
 }
+
+export * from './index.d'

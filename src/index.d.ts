@@ -5,6 +5,7 @@ import {
   RTCSession,
 } from "jssip/lib/RTCSession";
 
+
 // 状态枚举
 export enum State {
   MIC_ERROR = "MIC_ERROR", //麦克风检测异常
@@ -163,3 +164,4 @@ export default class ShsanyCall {
   private stateEventListener: ((event: State, data: StateListenerMessage | CallEndEvent | LatencyStat | string | null | undefined) => void) | undefined;
   private checkMic: boolean;
 }
+
