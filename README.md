@@ -18,9 +18,9 @@ ShsanyCall 是一个基于 WebRTC 的 SIP 电话 SDK，能够在 Web 应用中�
 ### 安装
 
 ```bash
-npm install shsany-call
+yarn add  git+https://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@github.com/luckys-long/shsany-jssip-sdk.git 
 # 或  
-yarn add shsany-call
+# yarn add shsany-call
 ```
 
 #### 初始化
@@ -86,6 +86,10 @@ callInstance.cleanSdk();
 ```
 
 ## 流程说明
+
+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
+npm install git+https://${GITHUB_TOKEN}@github.com/luckys-long/shsany-jssip-sdk.git
+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
 
 ### 1、初始化
 
