@@ -2,7 +2,20 @@
   "name": "shsany-jssip-sdk",
   "version": "0.0.1",
   "description": "",
-  "main": "index.js",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/shsany-jssip-sdk.umd.cjs",
+  "module": "./dist/shsany-jssip-sdk.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/shsany-jssip-sdk.js",
+      "require": "./dist/shsany-jssip-sdk.umd.cjs"
+    }
+  },
   "scripts": {
     "dev": "vite --host",
     "build": "tsc && vite build",
@@ -16,6 +29,7 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "@types/node": "^24.0.14",
     "typescript": "^5.8.3",
     "vite": "6",
     "vite-plugin-dts": "^4.5.4"

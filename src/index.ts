@@ -1,6 +1,6 @@
 import * as jssip from "jssip";
-import { URI } from "jssip";
-import { v4 as uuidv4 } from "uuid";
+// import { URI } from "jssip";
+// import { v4 as uuidv4 } from "uuid";
 
 import {
   State,
@@ -16,7 +16,7 @@ import {
 import {
   EndEvent,
   HoldEvent,
-  IceCandidateEvent,
+  // IceCandidateEvent,
   IncomingEvent,
   OutgoingEvent,
   PeerConnectionEvent,
@@ -30,8 +30,7 @@ import {
   OutgoingRTCSessionEvent,
 } from "jssip/lib/UA";
 
-jssip.C.SESSION_EXPIRES = 120;
-jssip.C.MIN_SESSION_EXPIRES = 120;
+
 
 export default class ShsanyCall {
   //媒体控制
@@ -44,22 +43,22 @@ export default class ShsanyCall {
   private audioView = document.createElement("audio");
   private ua: jssip.UA;
   private socket: jssip.WebSocketInterface;
-  private localAgent: String;
+  private localAgent: string;
   //对方号码
-  private otherLegNumber: String | undefined;
+  // private otherLegNumber: string | undefined;
   //呼叫中session:呼出、呼入、当前
   private outgoingSession: RTCSession | undefined;
+  // @ts-ignore: Will be used in future implementation
   private incomingSession: RTCSession | undefined;
   private currentSession: RTCSession | undefined;
-  private sessionMap: Map<string, RTCSession> = new Map();
+  // private sessionMap: Map<string, RTCSession> = new Map();
   public localIp: string;
 
-  private deviceState: State = State.Idle;
   //呼叫方向 outbound:呼出/inbound:呼入
   private direction: CallDirection | undefined;
 
   //当前通话的网络延迟统计定时器(每秒钟获取网络情况)
-  private currentLatencyStatTimer: number | undefined;
+  private currentLatencyStatTimer: ReturnType<typeof setInterval> | undefined;
   private currentStatReport!: NetworkLatencyStat;
 
   //回调函数
@@ -96,12 +95,12 @@ export default class ShsanyCall {
     deviceIP: string;
     port: number;
   }) {
-    const { username, password, serverIp, deviceIP, port = 5066 } = regInfo;
+    const { username, password, serverIp, deviceIP, port = 5060 } = regInfo;
     this.localIp = deviceIP;
     this.socket = new jssip.WebSocketInterface(`wss://${serverIp}:7443`);
     let configuration = {
       sockets: [this.socket],
-      uri: `sip:${username}@${serverIp}:5060;transport=wss`,
+      uri: `sip:${username}@${serverIp}:${port};transport=wss`,
       password: password,
       outbound_proxy_set: `ws://${serverIp}:7443`,
       contact_uri: `sip:${username}@${deviceIP}:20455;rtcweb-breaker=yes;transport=ws`,
@@ -151,7 +150,7 @@ export default class ShsanyCall {
         if (data.originator === "remote") {
           // 远程来电
           this.incomingSession = data.session;
-          this.currentSession = this.incomingSession;
+          this.currentSession = session;
           this.direction = CallDirectionEnum.INBOUND;
           currentEvent = State.INCOMING_CALL;
         } else {
@@ -382,7 +381,7 @@ export default class ShsanyCall {
   };
 
   public call(phoneNumber: string | number, isVideo: boolean) {
-    this.micCheck();
+     this.checkMic && this.micCheck();
     if (this.ua && this.ua.isRegistered()) {
       let eventHandlers = {
         peerconnection: (e: { peerconnection: RTCPeerConnection }) => {
@@ -401,7 +400,7 @@ export default class ShsanyCall {
                 frameRate: { ideal: 30, max: 60 },
               }
             : false,
-        },
+        } as MediaStreamConstraints,
         pcConfig: {},
         rtcOfferConstraints: {
           offerToReceiveAudio: true,
@@ -410,6 +409,7 @@ export default class ShsanyCall {
       };
       const sip_uri_ = `sip:${phoneNumber}@${this.localIp}:5060`;
       this.outgoingSession = this.ua.call(sip_uri_, options);
+      this.currentSession = this.outgoingSession;
     } else {
       this.onChangeState(State.ERROR, { msg: "请在注册成功后再发起外呼请求." });
       return "";
@@ -439,13 +439,25 @@ export default class ShsanyCall {
     }
   }
 
-  public hold() {
+public hold() {
+  console.log("---保持",this.currentSession);
+  
     if (!this.currentSession || !this.checkCurrentCallIsActive()) {
       return;
     }
-    this.currentSession.hold();
-  }
-
+        let options = {
+      useUpdate: false,
+    };
+    let done = () => {
+    };
+    try {
+      this.currentSession?.hold(options, done);
+    } catch (error) {
+      this.onChangeState(State.ERROR, {
+        msg: "保持通话失败: " + error
+      });
+    }
+}
     //取消保持
   public unhold() {
     if (!this.currentSession || !this.checkCurrentCallIsActive()) {
@@ -454,7 +466,12 @@ export default class ShsanyCall {
     if (!this.currentSession.isOnHold()) {
       return;
     }
-    this.currentSession.unhold();
+        let options = {
+      useUpdate: false,
+    };
+    let done = () => {
+    };
+    this.currentSession.unhold(options, done);
   }
   
 
@@ -523,7 +540,12 @@ export default class ShsanyCall {
     this.incomingSession = undefined;
     this.currentSession = undefined;
     this.direction = undefined;
-    this.otherLegNumber = "";
+     if (this.audioView.srcObject) {
+      const stream = this.audioView.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      this.audioView.srcObject = null;
+    }
+
     clearInterval(this.currentLatencyStatTimer);
     this.currentLatencyStatTimer = undefined;
     this.currentStatReport = {

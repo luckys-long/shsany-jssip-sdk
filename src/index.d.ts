@@ -1,3 +1,4 @@
+// @ts-ignore: 导入的类型用于类型声明
 import * as jssip from "jssip";
 
 import {
@@ -42,7 +43,7 @@ export interface InitConfig {
   extPwd: string; // 分机密码
   stun?: StunConfig; // stun服务器配置
   checkMic: boolean; // 是否检测麦克风
-  stateEventListener: Function; // 回调函数
+  stateEventListener: (event: State, data: StateListenerMessage | CallEndEvent | LatencyStat | string | null | undefined) => void; // 回调函数
 }
 
 // stun服务器配置
@@ -63,18 +64,17 @@ export interface CallEndEvent {
   answered: boolean;
 }
 
-
 export interface StateListenerMessage {
   msg?: string;
-  localAgent?: String;
+  localAgent?: string;
   direction?: CallDirection; //呼叫方向
-  otherLegNumber?: String;
-  callId?: String;
+  otherLegNumber?: string;
+  callId?: string;
   isTransfer?: any; //转接状态
 
-  latencyTime?: number | undefined; //网络延迟(ms)
-  upLossRate?: number | undefined; //上行-丢包率
-  downLossRate?: number | undefined; //下行-丢包率
+  latencyTime?: number; //网络延迟(ms)
+  upLossRate?: number; //上行-丢包率
+  downLossRate?: number; //下行-丢包率
 }
 
 // 网络延迟统计
@@ -89,7 +89,6 @@ export interface NetworkLatencyStat {
   outboundAudioLevel?: number; //上行-声音大小
 }
 
-
 // 网络延迟统计
 export interface LatencyStat {
   latencyTime: number;
@@ -101,12 +100,66 @@ export interface LatencyStat {
 
 interface CallExtraParam {
   outNumber?: string;
-  businessId?: String;
+  businessId?: string;
 }
 
-
 export default class ShsanyCall {
+  constructor(config: InitConfig);
 
-    private constraints: { audio: boolean; video: boolean };
-     
+  // SIP相关方法
+  sipInit(regInfo: {
+    username: string;
+    password: string;
+    serverIp: string;
+    deviceIP: string;
+    port: number;
+  }): void;
+  register(): void;
+  unregister(): void;
+
+  // 通话控制方法
+  call(phoneNumber: string | number, isVideo: boolean): void;
+  answer(): void;
+  hangup(): void;
+  hold(): void;
+  unhold(): void;
+  mute(): void;
+  unmute(): void;
+  transfer(phone: string): void;
+
+  // 消息功能
+  sendMessage(target: string, content: string): void;
+
+  // 设备检测
+  micCheck(): void;
+
+  // 状态变更回调
+  private onChangeState(
+    event: State,
+    data: StateListenerMessage | CallEndEvent | LatencyStat | string | null | undefined
+  ): void;
+
+  // 内部方法
+  private handleAudio(pc: RTCPeerConnection): void;
+  private checkCurrentCallIsActive(): boolean;
+  private cleanCallingData(): void;
+
+  // 属性
+  private constraints: { audio: boolean; video: boolean };
+  private audioView: HTMLAudioElement;
+  private ua: jssip.UA;
+  private socket: jssip.WebSocketInterface;
+  private localAgent: string;
+  private otherLegNumber: string | undefined;
+  private outgoingSession: RTCSession | undefined;
+  private incomingSession: RTCSession | undefined;
+  private currentSession: RTCSession | undefined;
+  private sessionMap: Map<string, RTCSession>;
+  public localIp: string;
+  private deviceState: State;
+  private direction: CallDirection | undefined;
+  private currentLatencyStatTimer: number | undefined;
+  private currentStatReport: NetworkLatencyStat;
+  private stateEventListener: ((event: State, data: StateListenerMessage | CallEndEvent | LatencyStat | string | null | undefined) => void) | undefined;
+  private checkMic: boolean;
 }

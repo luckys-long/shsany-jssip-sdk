@@ -376,6 +376,13 @@
   resolved "https://registry.npmmirror.com/@types/ms/-/ms-2.1.0.tgz#052aa67a48eccc4309d7f0191b7e41434b90bb78"
   integrity sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==
 
+"@types/node@^24.0.14":
+  version "24.0.14"
+  resolved "https://registry.npmmirror.com/@types/node/-/node-24.0.14.tgz#6e3d4fb6d858c48c69707394e1a0e08ce1ecc1bc"
+  integrity sha512-4zXMWD91vBLGRtHK3YbIoFMia+1nqEz72coM42C5ETjnNCa/heoj7NT1G67iAfOqMmcfhuCZ4uNpyz8EjlAejw==
+  dependencies:
+    undici-types "~7.8.0"
+
 "@volar/language-core@2.4.15", "@volar/language-core@~2.4.11":
   version "2.4.15"
   resolved "https://registry.npmmirror.com/@volar/language-core/-/language-core-2.4.15.tgz#759d04cb4eab9920560b8bcfa4515d5b08a1b7ce"
@@ -951,6 +958,11 @@ ufo@^1.5.4:
   version "1.6.1"
   resolved "https://registry.npmmirror.com/ufo/-/ufo-1.6.1.tgz#ac2db1d54614d1b22c1d603e3aef44a85d8f146b"
   integrity sha512-9a4/uxlTWJ4+a5i0ooc1rU7C7YOw3wT+UGqdeNNHWnOF9qcMBgLRS+4IYUqbczewFx4mLEig6gawh7X6mFlEkA==
+
+undici-types@~7.8.0:
+  version "7.8.0"
+  resolved "https://registry.npmmirror.com/undici-types/-/undici-types-7.8.0.tgz#de00b85b710c54122e44fbfd911f8d70174cd294"
+  integrity sha512-9UJ2xGDvQ43tYyVMpuHlsgApydB8ZKfVYTsLDhXkFL/6gfkp+U8xTGdh8pMJv1SpZna0zxG1DwsKZsreLbXBxw==
 
 universalify@^2.0.0:
   version "2.0.1"
