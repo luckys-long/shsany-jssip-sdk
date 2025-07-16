@@ -1,5 +1,5 @@
 import * as jssip from "jssip";
-// import { URI } from "jssip";
+import { URI } from "jssip";
 // import { v4 as uuidv4 } from "uuid";
 
 import {
@@ -96,11 +96,13 @@ export default class ShsanyCall {
     port: number;
   }) {
     const { username, password, serverIp, deviceIP, port = 5060 } = regInfo;
+    const sipUri = new URI('sip', username, serverIp, port)
+    console.log('sipUri', sipUri.toString())
     this.localIp = deviceIP;
     this.socket = new jssip.WebSocketInterface(`wss://${serverIp}:7443`);
     let configuration = {
       sockets: [this.socket],
-      uri: `sip:${username}@${serverIp}:${port};transport=wss`,
+      uri: sipUri.toString(),
       password: password,
       outbound_proxy_set: `ws://${serverIp}:7443`,
       contact_uri: `sip:${username}@${deviceIP}:20455;rtcweb-breaker=yes;transport=ws`,
