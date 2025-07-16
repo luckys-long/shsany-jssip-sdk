@@ -1,9 +1,10 @@
-var E = Object.defineProperty;
-var L = (s, t, e) => t in s ? E(s, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : s[t] = e;
-var a = (s, t, e) => L(s, typeof t != "symbol" ? t + "" : t, e);
-import * as C from "jssip";
+var L = Object.defineProperty;
+var m = (s, t, e) => t in s ? L(s, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : s[t] = e;
+var a = (s, t, e) => m(s, typeof t != "symbol" ? t + "" : t, e);
+import * as p from "jssip";
+import { URI as I } from "jssip";
 var i = /* @__PURE__ */ ((s) => (s.MIC_ERROR = "MIC_ERROR", s.ERROR = "ERROR", s.CONNECTED = "CONNECTED", s.DISCONNECTED = "DISCONNECTED", s.REGISTERED = "REGISTERED", s.UNREGISTERED = "UNREGISTERED", s.REGISTER_FAILED = "REGISTER_FAILED", s.INCOMING_CALL = "INCOMING_CALL", s.OUTGOING_CALL = "OUTGOING_CALL", s.IN_CALL = "IN_CALL", s.HOLD = "HOLD", s.CALL_END = "CALL_END", s.MUTE = "MUTE", s.UNMUTE = "UNMUTE", s.LATENCY_STAT = "LATENCY_STAT", s.MESSAGE_INCOMING = "MESSAGE_INCOMING", s.Idle = "Idle", s))(i || {}), g = /* @__PURE__ */ ((s) => (s.OUTBOUND = "outbound", s.INBOUND = "inbound", s))(g || {});
-class I {
+class v {
   constructor(t) {
     //媒体控制
     a(this, "constraints", {
@@ -49,11 +50,11 @@ class I {
     });
   }
   sipInit(t) {
-    const { username: e, password: o, serverIp: n, deviceIP: d, port: l = 5060 } = t;
-    this.localIp = d, this.socket = new C.WebSocketInterface(`wss://${n}:7443`);
-    let p = {
+    const { username: e, password: o, serverIp: n, deviceIP: d, port: l = 5060 } = t, C = new I("sip", e, n, l);
+    console.log("sipUri", C.toString()), this.localIp = d, this.socket = new p.WebSocketInterface(`wss://${n}:7443`);
+    let E = {
       sockets: [this.socket],
-      uri: `sip:${e}@${n}:${l};transport=wss`,
+      uri: C.toString(),
       password: o,
       outbound_proxy_set: `ws://${n}:7443`,
       contact_uri: `sip:${e}@${d}:20455;rtcweb-breaker=yes;transport=ws`,
@@ -63,7 +64,7 @@ class I {
       register_expires: 120,
       mediaconstraints: {}
     };
-    this.ua = new C.UA(p), this.ua.on("connected", (r) => {
+    this.ua = new p.UA(E), this.ua.on("connected", (r) => {
       this.onChangeState(i.CONNECTED, null);
     }), this.ua.on("disconnected", (r) => {
       this.ua.stop(), r.error && this.onChangeState(i.ERROR, {
@@ -303,5 +304,5 @@ class I {
   }
 }
 export {
-  I as default
+  v as default
 };
