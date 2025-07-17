@@ -30,8 +30,6 @@ import {
   OutgoingRTCSessionEvent,
 } from "jssip/lib/UA";
 
-
-
 export default class ShsanyCall {
   //媒体控制
   private constraints = {
@@ -96,8 +94,8 @@ export default class ShsanyCall {
     port: number;
   }) {
     const { username, password, serverIp, deviceIP, port = 5060 } = regInfo;
-    const sipUri = new URI('sip', username, serverIp, port)
-    console.log('sipUri', sipUri.toString())
+    const sipUri = new URI("sip", username, serverIp, port);
+    console.log("sipUri", sipUri.toString());
     this.localIp = deviceIP;
     this.socket = new jssip.WebSocketInterface(`wss://${serverIp}:7443`);
     let configuration = {
@@ -160,9 +158,10 @@ export default class ShsanyCall {
           currentEvent = State.OUTGOING_CALL;
           // 处理呼叫逻辑
         }
+        const hasVideo = this.hasVideoStream(session);
         session.on("peerconnection", (evt: PeerConnectionEvent) => {
           // 处理媒体流
-          this.handleAudio(evt.peerconnection);
+          this.handleMedia(evt.peerconnection, hasVideo);
         });
         // 来电振铃
         session.on("progress", (_evt: IncomingEvent | OutgoingEvent) => {
@@ -240,6 +239,7 @@ export default class ShsanyCall {
       | CallEndEvent
       | LatencyStat
       | string
+      | Object
       | null
       | undefined
   ) {
@@ -249,10 +249,10 @@ export default class ShsanyCall {
     this.stateEventListener(event, data);
   }
 
-  // 处理媒体流
-  private handleAudio(pc: RTCPeerConnection) {
+  private handleMedia(pc: RTCPeerConnection, isVideo: boolean = false) {
     this.audioView.autoplay = true;
-    // 网络情况统计
+    this.audioView.srcObject = null;
+
     this.currentStatReport = {
       outboundPacketsSent: 0,
       outboundLost: 0,
@@ -340,17 +340,33 @@ export default class ShsanyCall {
     }, 1000);
 
     if ("addTrack" in pc) {
-      pc.ontrack = (media) => {
-        if (media.streams.length > 0 && media.streams[0].active) {
-          this.audioView.srcObject = media.streams[0];
-        }
-      };
+      if (isVideo) {
+        // 视频通话处理
+        pc.ontrack = (media) => {
+          this.onChangeState(State.REMOTE_STREAM_READY, {
+            stream: media.streams[0],
+          });
+        };
+      } else {
+        // 非视频处理
+        pc.ontrack = (media) => {
+          if (media.streams.length > 0 && media.streams[0].active) {
+            this.audioView.srcObject = media.streams[0];
+          }
+        };
+      }
     } else {
       // @ts-ignore
       pc.onaddstream = (media: { stream: any }) => {
         const remoteStream = media.stream;
-        if (remoteStream.active) {
-          this.audioView.srcObject = remoteStream;
+        if (isVideo) {
+          this.onChangeState(State.REMOTE_STREAM_READY, {
+            stream: remoteStream,
+          });
+        } else {
+          if (remoteStream.active) {
+            this.audioView.srcObject = remoteStream;
+          }
         }
       };
     }
@@ -383,14 +399,13 @@ export default class ShsanyCall {
   };
 
   public call(phoneNumber: string | number, isVideo: boolean) {
-     this.checkMic && this.micCheck();
+    this.checkMic && this.micCheck();
     if (this.ua && this.ua.isRegistered()) {
       let eventHandlers = {
         peerconnection: (e: { peerconnection: RTCPeerConnection }) => {
-          this.handleAudio(e.peerconnection);
+          this.handleMedia(e.peerconnection, isVideo);
         },
       };
-
       let options = {
         eventHandlers: eventHandlers,
         mediaConstraints: {
@@ -418,10 +433,20 @@ export default class ShsanyCall {
     }
   }
 
-    public answer() {
+  public answer() {
     if (this.currentSession && this.currentSession.isInProgress()) {
+      const hasVideo = this.hasVideoStream(this.currentSession);
       this.currentSession.answer({
-        mediaConstraints: this.constraints,
+        mediaConstraints: {
+          audio: true,
+          video: hasVideo,
+        },
+        
+        pcConfig: {},
+        rtcAnswerConstraints: {
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: hasVideo,
+        },
       });
     } else {
       this.onChangeState(State.ERROR, {
@@ -430,7 +455,15 @@ export default class ShsanyCall {
     }
   }
 
-    // 挂断
+  // 判断当前通话是否是视频通话
+  private hasVideoStream(session: RTCSession): boolean {
+    const sdp = session?._request?.body;
+    if (!sdp) return false;
+    // 检查 SDP 中是否包含视频媒体描述
+    return sdp.includes("m=video");
+  }
+
+  // 挂断
   public hangup() {
     if (this.currentSession && !this.currentSession.isEnded()) {
       this.currentSession.terminate();
@@ -441,26 +474,25 @@ export default class ShsanyCall {
     }
   }
 
-public hold() {
-  console.log("---保持",this.currentSession);
-  
+  public hold() {
+    console.log("---保持", this.currentSession);
+
     if (!this.currentSession || !this.checkCurrentCallIsActive()) {
       return;
     }
-        let options = {
+    let options = {
       useUpdate: false,
     };
-    let done = () => {
-    };
+    let done = () => {};
     try {
       this.currentSession?.hold(options, done);
     } catch (error) {
       this.onChangeState(State.ERROR, {
-        msg: "保持通话失败: " + error
+        msg: "保持通话失败: " + error,
       });
     }
-}
-    //取消保持
+  }
+  //取消保持
   public unhold() {
     if (!this.currentSession || !this.checkCurrentCallIsActive()) {
       return;
@@ -468,14 +500,12 @@ public hold() {
     if (!this.currentSession.isOnHold()) {
       return;
     }
-        let options = {
+    let options = {
       useUpdate: false,
     };
-    let done = () => {
-    };
+    let done = () => {};
     this.currentSession.unhold(options, done);
   }
-  
 
   public mute() {
     if (!this.currentSession || !this.checkCurrentCallIsActive()) {
@@ -542,9 +572,9 @@ public hold() {
     this.incomingSession = undefined;
     this.currentSession = undefined;
     this.direction = undefined;
-     if (this.audioView.srcObject) {
+    if (this.audioView.srcObject) {
       const stream = this.audioView.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach((track) => track.stop());
       this.audioView.srcObject = null;
     }
 
@@ -559,4 +589,4 @@ public hold() {
   }
 }
 
-export * from './index.d'
+

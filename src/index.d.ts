@@ -25,6 +25,9 @@ export enum State {
   LATENCY_STAT = "LATENCY_STAT", //网络延迟统计
   MESSAGE_INCOMING = "MESSAGE_INCOMING", //消息接收
   Idle = "Idle", //空闲
+
+  REMOTE_STREAM_READY = "REMOTE_STREAM_READY" // 远程流准备就绪
+
 }
 
 // 通话方向枚举
@@ -137,7 +140,7 @@ export default class ShsanyCall {
   // 状态变更回调
   private onChangeState(
     event: State,
-    data: StateListenerMessage | CallEndEvent | LatencyStat | string | null | undefined
+    data: StateListenerMessage | CallEndEvent | LatencyStat | string |Object| null | undefined
   ): void;
 
   // 内部方法

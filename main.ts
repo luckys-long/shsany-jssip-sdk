@@ -118,10 +118,7 @@ const App = {
           break;
       }
     };
-    enum StunType {
-      STUN = "stun",
-      TURN = "turn",
-    }
+
     const init = () => {
       console.log("初始化");
       try {
